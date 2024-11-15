@@ -1,0 +1,156 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  name String
+  lastname String
+  email String @unique
+  password String
+  phoneNumber String
+  role Role @default(DEFAULT)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  profilePic String?
+  biography String?
+  disclaimer String?
+
+  
+
+  msgSent Message[] @relation("MessageToUser")
+  msgReceiver Message[] @relation("MessageFromUser")
+  properties Property[]
+}
+
+enum Role {
+  ADMIN
+  COLLABORATOR
+  DEFAULT
+}
+
+model Feature {
+  id Int @unique @default(autoincrement())
+  name String @unique
+  unit String?
+
+  instances FeatureOfProp[]
+}
+
+model FeatureOfProp {
+  id Int @unique @default(autoincrement())
+  quantity String 
+  featureId Int
+  feature Feature @relation(fields: [featureId], references: [id])
+
+  propId Int 
+  property Property @relation(fields: [propId], references: [id])
+}
+
+model Type {
+  id Int @unique @default(autoincrement())
+  name String @unique
+  properties Property[]
+}
+
+model Property {
+  id Int @id @default(autoincrement())
+
+  province String
+  city String
+  street String
+  streetId String?
+  addId String?
+  state PropStates @default(AVAILABE)
+  publication Publication[]
+
+  latitude Decimal @db.Decimal(17,14)
+  longitude Decimal @db.Decimal(17,14)
+
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+
+  typeId Int
+  type Type @relation(fields: [typeId], references: [id])
+
+  features FeatureOfProp[]
+}
+
+enum PropStates {
+  RESERVED
+  AVAILABE
+}
+
+model Publication {
+  id Int @id @default(autoincrement())
+  title String @unique
+  description String
+  status Status @default(DRAFT)
+  uid String @default(uuid())@unique
+  propertyId Int 
+  property Property @relation(fields: [propertyId], references: [id])
+
+  images Image[]
+  videos Video[]
+
+  operationId Int
+  operation Operation @relation(fields: [operationId], references: [id])
+  prices Price[]
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+}
+
+model Image {
+  id Int @unique @default(autoincrement())
+  url String
+  pubId Int
+  publication Publication @relation(fields: [pubId], references: [id])
+}
+
+model Video {
+  id Int @unique @default(autoincrement())
+  url String
+  pubId Int
+  publication Publication @relation(fields: [pubId], references: [id])
+}
+
+model Operation {
+  id Int @unique @default(autoincrement())
+  name String @unique
+  publications Publication[]
+}
+
+
+model Price {
+  id Int @unique @default(autoincrement())
+  type TypePrice @default(FIXED)
+  amount Float
+  add_amount Float?
+
+  idPub Int
+  publication Publication @relation(fields: [idPub], references: [id])
+}
+
+enum TypePrice {
+  FIXED
+  RANGE
+}
+
+model Message {
+  id Int @unique @default(autoincrement())
+  content String
+  senderId Int
+  receiverId Int
+  sender User @relation(fields: [senderId], references: [id], name: "MessageFromUser")
+  receiver User @relation(fields: [receiverId], references: [id], name: "MessageToUser")
+}
